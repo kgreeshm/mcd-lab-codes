@@ -5,4 +5,5 @@ sudo apt-get install -y apache2
 sudo systemctl start apache2
 sudo systemctl enable apache2
 cd ../../var/www/html/
-echo 'This is application-2' | sudo tee index.html
+cp /home/ubuntu/azure-app.png /var/www/html/azure-app.png
+cp /home/ubuntu/index.html /var/www/html/index.html

@@ -72,11 +72,11 @@ resource "azurerm_linux_virtual_machine" "app" {
   resource_group_name   = azurerm_resource_group.app-rg["${count.index}"].name
   location              = var.location
   size                  = "Standard_B1s"
-  admin_username        = "pod${var.pod_number}"
+  admin_username        = "ubuntu"
   network_interface_ids = [azurerm_network_interface.app-interface["${count.index}"].id]
 
   admin_ssh_key {
-    username   = "pod${var.pod_number}"
+    username   = "ubuntu"
     public_key = tls_private_key.key_pair.public_key_openssh
   }
 
@@ -92,6 +92,32 @@ resource "azurerm_linux_virtual_machine" "app" {
     version   = "latest"
   }
   custom_data = count.index == 0 ? base64encode(data.template_file.application1_install.rendered) : base64encode(data.template_file.application2_install.rendered)
+
+  provisioner "file" {
+    source      = "./images/azure-app${count.index + 1}.png"
+    destination = "/home/ubuntu/azure-app.png"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = azurerm_public_ip.app-ip["${count.index}"].ip_address #aws_eip.app-EIP["${count.index}"].public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "./html/index.html"
+    destination = "/home/ubuntu/index.html"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = azurerm_public_ip.app-ip["${count.index}"].ip_address #aws_eip.app-EIP["${count.index}"].public_ip
+    }
+  }
+
+
 
 }
 
@@ -201,6 +227,18 @@ output "app2-public-ip" {
   value = azurerm_public_ip.app-ip[1].ip_address
 }
 
-output "Command_to_use_for_ssh_into_application_vms" {
-  value = "ssh -i mcd-keypair pod<pod_number>@<app-ip-address>"
+output "Command_to_use_for_ssh_into_app1_vm" {
+  value = "ssh -i mcd-keypair ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"
+}
+
+output "Command_to_use_for_ssh_into_app2_vm" {
+  value = "ssh -i mcd-keypair ubuntu@${azurerm_public_ip.app-ip[1].ip_address}"
+}
+
+output "http_command_app1" {
+  value = "http://${azurerm_public_ip.app-ip[0].ip_address}"
+}
+
+output "http_command_app2" {
+  value = "http://${azurerm_public_ip.app-ip[1].ip_address}"
 }

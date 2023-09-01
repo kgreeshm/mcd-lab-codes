@@ -77,9 +77,34 @@ resource "aws_instance" "AppMachines" {
   instance_type = "t2.micro"
   key_name      = "mcd-keypair"
   user_data     = count.index == 0 ? data.template_file.application1_install.rendered : data.template_file.application2_install.rendered
+
   network_interface {
     network_interface_id = aws_network_interface.application_interface["${count.index}"].id
     device_index         = 0
+  }
+
+  provisioner "file" {
+    source      = "./images/aws-app${count.index + 1}.png"
+    destination = "/home/ubuntu/aws-app.png"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = aws_eip.app-EIP["${count.index}"].public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "./html/index.html"
+    destination = "/home/ubuntu/index.html"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = aws_eip.app-EIP["${count.index}"].public_ip
+    }
   }
 
   tags = {
@@ -194,6 +219,21 @@ output "app2-public-ip" {
   value = aws_eip.app-EIP[1].public_ip
 }
 
-output "Command_to_use_for_ssh_into_application_vms" {
-  value = "ssh -i mcd-keypair ubuntu@<app-ip-address>"
+
+output "Command_to_use_for_ssh_into_app1_vm" {
+  value = "ssh -i mcd-keypair ubuntu@${aws_eip.app-EIP[0].public_ip}"
 }
+
+output "Command_to_use_for_ssh_into_app2_vm" {
+  value = "ssh -i mcd-keypair ubuntu@${aws_eip.app-EIP[1].public_ip}"
+}
+
+output "http_command_app1" {
+  value = "http://${aws_eip.app-EIP[0].public_ip}"
+}
+
+output "http_command_app2" {
+  value = "http://${aws_eip.app-EIP[1].public_ip}"
+}
+
+
