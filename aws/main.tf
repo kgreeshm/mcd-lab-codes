@@ -58,12 +58,12 @@ resource "tls_private_key" "key_pair" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key_pair.private_key_openssh
-  filename        = "mcd-keypair"
+  filename        = "pod${var.pod_number}-mcd-keypair"
   file_permission = 0700
 }
 
 resource "aws_key_pair" "sshkeypair" {
-  key_name   = "mcd-keypair"
+  key_name   = "pod${var.pod_number}-mcd-keypair"
   public_key = tls_private_key.key_pair.public_key_openssh
 }
 
@@ -75,7 +75,7 @@ resource "aws_instance" "AppMachines" {
   count         = 2
   ami           = "ami-053b0d53c279acc90"
   instance_type = "t2.micro"
-  key_name      = "mcd-keypair"
+  key_name      = "pod${var.pod_number}-mcd-keypair"
   user_data     = count.index == 0 ? data.template_file.application1_install.rendered : data.template_file.application2_install.rendered
 
   network_interface {
@@ -107,8 +107,21 @@ resource "aws_instance" "AppMachines" {
     }
   }
 
+    provisioner "file" {
+    source      = "./html/status${count.index + 1}"
+    destination = "/home/ubuntu/status"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = aws_eip.app-EIP["${count.index}"].public_ip
+    }
+  }
+
+
   tags = {
-    Name = "app${count.index + 1}"
+    Name = "pod${var.pod_number}-app${count.index + 1}"
   }
 }
 
@@ -118,7 +131,7 @@ resource "aws_network_interface" "application_interface" {
   subnet_id   = aws_subnet.app_subnet["${count.index}"].id
   private_ips = count.index == 0 ? local.app1_nic : local.app2_nic
   tags = {
-    Name = "app${count.index + 1}-nic"
+    Name = "pod${var.pod_number}-app${count.index + 1}-nic"
   }
 }
 
@@ -130,7 +143,7 @@ resource "aws_internet_gateway" "int_gw" {
   count  = 2
   vpc_id = aws_vpc.app_vpc["${count.index}"].id
   tags = {
-    Name = "app${count.index + 1}-igw"
+    Name = "pod${var.pod_number}-app${count.index + 1}-igw"
   }
 }
 
@@ -143,7 +156,7 @@ resource "aws_eip" "app-EIP" {
   count  = 2
   domain = "vpc"
   tags = {
-    Name = "app${count.index + 1}-eip"
+    Name = "pod${var.pod_number}-app${count.index + 1}-eip"
   }
 }
 
@@ -159,7 +172,7 @@ resource "aws_eip_association" "app-eip-assocation" {
 
 resource "aws_security_group" "allow_all" {
   count  = 2
-  name   = "app-sg${count.index + 1}"
+  name   = "pod${var.pod_number}-app${count.index + 1}-sg"
   vpc_id = aws_vpc.app_vpc["${count.index}"].id
 
   ingress {
@@ -173,6 +186,9 @@ resource "aws_security_group" "allow_all" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "pod${var.pod_number}-app${count.index + 1}-sg"
   }
 }
 
@@ -190,7 +206,7 @@ resource "aws_route_table" "app-route" {
   count  = 2
   vpc_id = aws_vpc.app_vpc["${count.index}"].id
   tags = {
-    Name = "app-rt${count.index + 1}"
+    Name = "pod${var.pod_number}-app${count.index+1}-rt"
   }
 }
 
@@ -211,21 +227,13 @@ resource "aws_route_table_association" "app_association" {
 # Outputs
 ##################################################################################################################################
 
-output "app1-public-ip" {
-  value = aws_eip.app-EIP[0].public_ip
-}
-
-output "app2-public-ip" {
-  value = aws_eip.app-EIP[1].public_ip
-}
-
 
 output "Command_to_use_for_ssh_into_app1_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${aws_eip.app-EIP[0].public_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${aws_eip.app-EIP[0].public_ip}"
 }
 
 output "Command_to_use_for_ssh_into_app2_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${aws_eip.app-EIP[1].public_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${aws_eip.app-EIP[1].public_ip}"
 }
 
 output "http_command_app1" {

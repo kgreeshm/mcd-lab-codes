@@ -5,7 +5,7 @@
 
 resource "azurerm_resource_group" "app-rg" {
   count    = 2
-  name     = "pod${var.pod_number}-rg${count.index + 1}"
+  name     = "pod${var.pod_number}-app${count.index + 1}-rg"
   location = var.location
 }
 
@@ -35,7 +35,7 @@ resource "azurerm_subnet" "app-subnet" {
 
 resource "azurerm_route_table" "app_rt" {
   count               = 2
-  name                = "app${count.index + 1}-rt${count.index + 1}"
+  name                = "pod${var.pod_number}-app${count.index + 1}-rt"
   location            = var.location
   resource_group_name = azurerm_resource_group.app-rg["${count.index}"].name
 }
@@ -58,7 +58,7 @@ resource "tls_private_key" "key_pair" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key_pair.private_key_openssh
-  filename        = "mcd-keypair"
+  filename        = "pod${var.pod_number}-mcd-keypair"
   file_permission = 0700
 }
 
@@ -68,7 +68,7 @@ resource "local_file" "private_key" {
 
 resource "azurerm_linux_virtual_machine" "app" {
   count                 = 2
-  name                  = "app${count.index + 1}"
+  name                  = "pod${var.pod_number}-app${count.index + 1}"
   resource_group_name   = azurerm_resource_group.app-rg["${count.index}"].name
   location              = var.location
   size                  = "Standard_B1s"
@@ -117,8 +117,17 @@ resource "azurerm_linux_virtual_machine" "app" {
     }
   }
 
+   provisioner "file" {
+    source      = "./html/status${count.index + 1}"
+    destination = "/home/ubuntu/status"
 
-
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = azurerm_public_ip.app-ip["${count.index}"].ip_address 
+    }
+  }
 }
 
 ################################################################################################################################
@@ -127,7 +136,7 @@ resource "azurerm_linux_virtual_machine" "app" {
 
 resource "azurerm_network_security_group" "allow-all" {
   count               = 2
-  name                = "app${count.index + 1}-allow-all"
+  name                = "pod${var.pod_number}-app${count.index + 1}-sg"
   location            = var.location
   resource_group_name = azurerm_resource_group.app-rg["${count.index}"].name
 
@@ -161,7 +170,7 @@ resource "azurerm_network_security_group" "allow-all" {
 
 resource "azurerm_public_ip" "app-ip" {
   count               = 2
-  name                = "app${count.index + 1}-public-ip"
+  name                = "pod${var.pod_number}-app${count.index + 1}-public-ip"
   location            = var.location
   sku                 = "Standard"
   resource_group_name = azurerm_resource_group.app-rg["${count.index}"].name
@@ -171,12 +180,12 @@ resource "azurerm_public_ip" "app-ip" {
 resource "azurerm_network_interface" "app-interface" {
   depends_on          = [azurerm_subnet.app-subnet]
   count               = 2
-  name                = "app${count.index + 1}-nic"
+  name                = "pod${var.pod_number}-app${count.index + 1}-nic"
   location            = var.location
   resource_group_name = azurerm_resource_group.app-rg["${count.index}"].name
 
   ip_configuration {
-    name                          = "app${count.index + 1}-nic-ip"
+    name                          = "pod${var.pod_number}-app${count.index + 1}-nic-ip"
     subnet_id                     = azurerm_subnet.app-subnet["${count.index}"].id
     private_ip_address_allocation = "Static"
     private_ip_address            = count.index == 0 ? local.app1_nic : local.app2_nic
@@ -219,20 +228,12 @@ locals {
 # Outputs
 ##################################################################################################################################
 
-output "app1-public-ip" {
-  value = azurerm_public_ip.app-ip[0].ip_address
-}
-
-output "app2-public-ip" {
-  value = azurerm_public_ip.app-ip[1].ip_address
-}
-
 output "Command_to_use_for_ssh_into_app1_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"
+  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"
 }
 
 output "Command_to_use_for_ssh_into_app2_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${azurerm_public_ip.app-ip[1].ip_address}"
+  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${azurerm_public_ip.app-ip[1].ip_address}"
 }
 
 output "http_command_app1" {
