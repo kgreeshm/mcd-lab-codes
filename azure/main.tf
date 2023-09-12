@@ -117,7 +117,7 @@ resource "azurerm_linux_virtual_machine" "app" {
     }
   }
 
-   provisioner "file" {
+  provisioner "file" {
     source      = "./html/status${count.index + 1}"
     destination = "/home/ubuntu/status"
 
@@ -125,7 +125,7 @@ resource "azurerm_linux_virtual_machine" "app" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = tls_private_key.key_pair.private_key_openssh
-      host        = azurerm_public_ip.app-ip["${count.index}"].ip_address 
+      host        = azurerm_public_ip.app-ip["${count.index}"].ip_address
     }
   }
 }
@@ -227,6 +227,22 @@ locals {
 ##################################################################################################################################
 # Outputs
 ##################################################################################################################################
+
+output "app1-public-ip" {
+  value = azurerm_public_ip.app-ip[0].ip_address
+}
+
+output "app2-public-ip" {
+  value = azurerm_public_ip.app-ip[1].ip_address
+}
+
+output "app1-private-ip" {
+  value = "10.${var.pod_number}.100.10"
+}
+
+output "app2-private-ip" {
+  value = "10.${var.pod_number + 100}.100.10"
+}
 
 output "Command_to_use_for_ssh_into_app1_vm" {
   value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"

@@ -17,8 +17,8 @@ resource "google_project_service" "service" {
   for_each = toset(var.project_services)
   project  = var.project_id
 
-  service = each.key
- disable_on_destroy = false
+  service            = each.key
+  disable_on_destroy = false
 }
 
 ##################################################################################################################################
@@ -35,7 +35,7 @@ resource "google_service_account" "sa" {
 #############################################
 
 locals {
-    subnet_cidr1 = "10.${var.pod_number}.100.0/24"
+  subnet_cidr1 = "10.${var.pod_number}.100.0/24"
   subnet_cidr2 = "10.${var.pod_number + 100}.100.0/24"
   app1_nic     = "10.${var.pod_number}.100.10"
   app2_nic     = "10.${var.pod_number + 100}.100.10"
@@ -46,15 +46,15 @@ locals {
 ##################################################################################################################################
 
 resource "google_compute_network" "network" {
-    count=2
-  name                            = "pod${var.pod_number}-app${count.index + 1}-vpc"
-  routing_mode                    = "GLOBAL"
-  project                         = var.project_id
-  auto_create_subnetworks         = false
- }
+  count                   = 2
+  name                    = "pod${var.pod_number}-app${count.index + 1}-vpc"
+  routing_mode            = "GLOBAL"
+  project                 = var.project_id
+  auto_create_subnetworks = false
+}
 
- resource "google_compute_subnetwork" "subnets" {
-    count=2
+resource "google_compute_subnetwork" "subnets" {
+  count         = 2
   name          = "pod${var.pod_number}-app${count.index + 1}-subnet"
   ip_cidr_range = count.index == 0 ? local.subnet_cidr1 : local.subnet_cidr2
   network       = google_compute_network.network["${count.index}"].name
@@ -81,12 +81,12 @@ resource "local_file" "private_key" {
 
 
 resource "google_compute_instance" "application" {
-  count        = 2
-  name         = "app${count.index + 1}"
-  project      = var.project_id
-  machine_type = "e2-micro"
- zone         = var.vm_zones[0]
-   can_ip_forward            = true
+  count          = 2
+  name           = "app${count.index + 1}"
+  project        = var.project_id
+  machine_type   = "e2-micro"
+  zone           = var.vm_zones[0]
+  can_ip_forward = true
 
   boot_disk {
     initialize_params {
@@ -96,28 +96,28 @@ resource "google_compute_instance" "application" {
     }
   }
 
-   network_interface {
-      subnetwork = google_compute_subnetwork.subnets["${count.index}"].self_link
-      network_ip = count.index==0?local.app1_nic:local.app2_nic
-      access_config {
+  network_interface {
+    subnetwork = google_compute_subnetwork.subnets["${count.index}"].self_link
+    network_ip = count.index == 0 ? local.app1_nic : local.app2_nic
+    access_config {
       nat_ip       = null
       network_tier = "STANDARD"
     }
-   }
+  }
 
   metadata = {
-    ssh-keys       = "ubuntu:${tls_private_key.key_pair.public_key_openssh}"
+    ssh-keys = "ubuntu:${tls_private_key.key_pair.public_key_openssh}"
   }
-  metadata_startup_script = count.index==0?data.template_file.application1_install.rendered:data.template_file.application2_install.rendered
+  metadata_startup_script = count.index == 0 ? data.template_file.application1_install.rendered : data.template_file.application2_install.rendered
   service_account {
     email  = google_service_account.sa.email
     scopes = ["cloud-platform"]
- }
- }
+  }
+}
 
 resource "null_resource" "name" {
-  count=2
-  depends_on = [google_compute_instance.application[0],google_compute_instance.application[1]]
+  count      = 2
+  depends_on = [google_compute_instance.application[0], google_compute_instance.application[1]]
 
   provisioner "file" {
     source      = "./html/index.html"
@@ -126,7 +126,7 @@ resource "null_resource" "name" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = tls_private_key.key_pair.private_key_openssh
-      host        = google_compute_instance.application["${count.index}"].network_interface[0].access_config[0].nat_ip   
+      host        = google_compute_instance.application["${count.index}"].network_interface[0].access_config[0].nat_ip
     }
   }
 
@@ -136,10 +136,10 @@ resource "null_resource" "name" {
 }
 
 resource "null_resource" "name1" {
-  count=2
-  depends_on = [google_compute_instance.application[0],google_compute_instance.application[1]]
+  count      = 2
+  depends_on = [google_compute_instance.application[0], google_compute_instance.application[1]]
 
-   provisioner "file" {
+  provisioner "file" {
     source      = "./images/gcp-app${count.index + 1}.png"
     destination = "/home/ubuntu/gcp-app.png"
 
@@ -147,7 +147,7 @@ resource "null_resource" "name1" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = tls_private_key.key_pair.private_key_openssh
-      host        = google_compute_instance.application["${count.index}"].network_interface[0].access_config[0].nat_ip   
+      host        = google_compute_instance.application["${count.index}"].network_interface[0].access_config[0].nat_ip
     }
   }
 
@@ -162,17 +162,17 @@ resource "null_resource" "name1" {
 #################################################################################################################################
 
 resource "google_compute_firewall" "allow-ssh-bastion" {
-    count=2
-  name    = "allow-22-80-443${count.index+1}"
+  count   = 2
+  name    = "allow-22-80-443${count.index + 1}"
   network = google_compute_network.network["${count.index}"].name
   project = var.project_id
 
   allow {
     protocol = "tcp"
-    ports    = ["22","80","443"]
+    ports    = ["22", "80", "443"]
   }
 
-  source_ranges           = ["152.58.197.218/32","35.235.240.0/20","172.16.0.0/12","72.163.0.0/16","192.133.192.0/19","64.100.0.0/14"]
+  source_ranges           = ["152.58.236.185/32", "35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
   target_service_accounts = [google_service_account.sa.email]
 }
 
@@ -181,11 +181,19 @@ resource "google_compute_firewall" "allow-ssh-bastion" {
 #################################################################################################################################
 
 output "app1-public-ip" {
-  value=google_compute_instance.application[0].network_interface[0].access_config[0].nat_ip
+  value = google_compute_instance.application[0].network_interface[0].access_config[0].nat_ip
 }
 
 output "app2-public-ip" {
-  value=google_compute_instance.application[1].network_interface[0].access_config[0].nat_ip
+  value = google_compute_instance.application[1].network_interface[0].access_config[0].nat_ip
+}
+
+output "app1-private-ip" {
+  value = "10.${var.pod_number}.100.10"
+}
+
+output "app2-private-ip" {
+  value = "10.${var.pod_number + 100}.100.10"
 }
 
 

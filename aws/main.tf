@@ -107,7 +107,7 @@ resource "aws_instance" "AppMachines" {
     }
   }
 
-    provisioner "file" {
+  provisioner "file" {
     source      = "./html/status${count.index + 1}"
     destination = "/home/ubuntu/status"
 
@@ -206,7 +206,7 @@ resource "aws_route_table" "app-route" {
   count  = 2
   vpc_id = aws_vpc.app_vpc["${count.index}"].id
   tags = {
-    Name = "pod${var.pod_number}-app${count.index+1}-rt"
+    Name = "pod${var.pod_number}-app${count.index + 1}-rt"
   }
 }
 
@@ -227,6 +227,21 @@ resource "aws_route_table_association" "app_association" {
 # Outputs
 ##################################################################################################################################
 
+output "app1-public-eip" {
+  value = aws_eip.app-EIP[0].public_ip
+}
+
+output "app2-public-eip" {
+  value = aws_eip.app-EIP[1].public_ip
+}
+
+output "app1-private-ip" {
+  value = "10.${var.pod_number}.100.10"
+}
+
+output "app2-private-ip" {
+  value = "10.${var.pod_number + 100}.100.10"
+}
 
 output "Command_to_use_for_ssh_into_app1_vm" {
   value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${aws_eip.app-EIP[0].public_ip}"
