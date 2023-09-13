@@ -157,6 +157,29 @@ resource "null_resource" "name1" {
   }
 }
 
+
+resource "null_resource" "name2" {
+  count      = 2
+  depends_on = [google_compute_instance.application[0], google_compute_instance.application[1]]
+
+  provisioner "file" {
+    source      = "./html/status${count.index + 1}"
+    destination = "/home/ubuntu/status"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.key_pair.private_key_openssh
+      host        = google_compute_instance.application["${count.index}"].network_interface[0].access_config[0].nat_ip
+    }
+  }
+
+
+  triggers = {
+    instance_id = google_compute_instance.application["${count.index}"].id
+  }
+}
+
 #################################################################################################################################
 # Firewall Rules
 #################################################################################################################################
@@ -172,7 +195,7 @@ resource "google_compute_firewall" "allow-ssh-bastion" {
     ports    = ["22", "80", "443"]
   }
 
-  source_ranges           = ["152.58.236.185/32", "35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
+  source_ranges           = ["152.58.235.115/32", "35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
   target_service_accounts = [google_service_account.sa.email]
 }
 
