@@ -71,7 +71,7 @@ resource "tls_private_key" "key_pair" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key_pair.private_key_openssh
-  filename        = "mcd-keypair"
+  filename        = "pod${var.pod_number}-mcd-keypair"
   file_permission = 0700
 }
 
@@ -82,7 +82,7 @@ resource "local_file" "private_key" {
 
 resource "google_compute_instance" "application" {
   count          = 2
-  name           = "app${count.index + 1}"
+  name           = "pod${var.pod_number}-app${count.index + 1}"
   project        = var.project_id
   machine_type   = "e2-micro"
   zone           = var.vm_zones[0]
@@ -186,7 +186,7 @@ resource "null_resource" "name2" {
 
 resource "google_compute_firewall" "allow-ssh-bastion" {
   count   = 2
-  name    = "allow-22-80-443${count.index + 1}"
+  name    = "pod${var.pod_number}-app${count.index+1}-sg"
   network = google_compute_network.network["${count.index}"].name
   project = var.project_id
 
@@ -195,7 +195,7 @@ resource "google_compute_firewall" "allow-ssh-bastion" {
     ports    = ["22", "80", "443"]
   }
 
-  source_ranges           = ["152.58.235.115/32", "35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
+  source_ranges           = ["152.58.234.245/32","35.0.0.0/8" ,"35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
   target_service_accounts = [google_service_account.sa.email]
 }
 

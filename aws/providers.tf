@@ -7,9 +7,8 @@ provider "aws" {
 terraform {
   backend "s3" {
     bucket         = "kgreeshm-test-bucket"
-    key            = "" #local.key #"pod-${var.pod_number}-terraform.tfstate"
-    region         = "us-east-1" # Change to your desired region
+    key            = "aws-podx-terraform.tfstate" 
+    region         = "us-east-1" 
     encrypt        = true
-    #dynamodb_table = "<OPTIONAL_DYNAMODB_TABLE_NAME>"
   }
 }
