@@ -2,7 +2,7 @@
 
 # Define your variables
 POD_NUMBER=1
-TF_STATE_BUCKET="kgreeshm-test-bucket"
+TF_STATE_BUCKET="mcd-state-files-do-not-delete"
 TF_STATE_KEY="gcp-$POD_NUMBER-terraform.tfstate" 
 AWS_REGION="us-east-1"  # Update with your AWS region
 
