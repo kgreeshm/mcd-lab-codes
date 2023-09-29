@@ -201,7 +201,7 @@ resource "google_compute_firewall" "allow-ssh-bastion" {
     ports    = ["22", "80", "443"]
   }
 
-  source_ranges           = ["152.58.234.245/32","35.0.0.0/8" ,"35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14"]
+  source_ranges           = ["152.58.196.135/32","35.0.0.0/8" ,"35.235.240.0/20", "172.16.0.0/12", "72.163.0.0/16", "192.133.192.0/19", "64.100.0.0/14","64.100.10.0/23","64.100.12.0/24","64.100.13.0/24","192.133.192.0/23","192.133.202.0/24","64.100.255.0/25","128.107.222.0/24","128.107.219.0/24","128.107.220.0/24","128.107.221.0/24","128.107.93.0/24"]
   target_service_accounts = [google_service_account.sa.email]
 }
 
@@ -227,11 +227,11 @@ output "app2-private-ip" {
 
 
 output "Command_to_use_for_ssh_into_app1_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${google_compute_instance.application[0].network_interface[0].access_config[0].nat_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${google_compute_instance.application[0].network_interface[0].access_config[0].nat_ip}"
 }
 
 output "Command_to_use_for_ssh_into_app2_vm" {
-  value = "ssh -i mcd-keypair ubuntu@${google_compute_instance.application[1].network_interface[0].access_config[0].nat_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${google_compute_instance.application[1].network_interface[0].access_config[0].nat_ip}"
 }
 
 output "http_command_app1" {

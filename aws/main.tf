@@ -250,11 +250,11 @@ output "app2-private-ip" {
 }
 
 output "Command_to_use_for_ssh_into_app1_vm" {
-  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${aws_eip.app-EIP[0].public_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${aws_eip.app-EIP[0].public_ip}"
 }
 
 output "Command_to_use_for_ssh_into_app2_vm" {
-  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${aws_eip.app-EIP[1].public_ip}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${aws_eip.app-EIP[1].public_ip}"
 }
 
 output "http_command_app1" {

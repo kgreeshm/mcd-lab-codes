@@ -20,7 +20,7 @@ variable "project_id" {
 variable "region" {
   type        = string
   description = "The region"
-  default = "us-east1"
+  default = "us-east4"
 }
 
 variable "vm_zones" { 

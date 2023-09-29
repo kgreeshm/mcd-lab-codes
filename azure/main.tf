@@ -251,11 +251,11 @@ output "app2-private-ip" {
 }
 
 output "Command_to_use_for_ssh_into_app1_vm" {
-  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${azurerm_public_ip.app-ip[0].ip_address}"
 }
 
 output "Command_to_use_for_ssh_into_app2_vm" {
-  value = "ssh -i pod${var.pod_number}-mcd-keypair ubuntu@${azurerm_public_ip.app-ip[1].ip_address}"
+  value = "ssh -i pod${var.pod_number}-mcd-private-key ubuntu@${azurerm_public_ip.app-ip[1].ip_address}"
 }
 
 output "http_command_app1" {

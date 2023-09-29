@@ -1,2 +1,2 @@
-pod_number = 1
+pod_number = 4
 location="East US"
