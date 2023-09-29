@@ -71,7 +71,13 @@ resource "tls_private_key" "key_pair" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key_pair.private_key_openssh
-  filename        = "pod${var.pod_number}-mcd-keypair"
+  filename        = "pod${var.pod_number}-mcd-private-key"
+  file_permission = 0700
+}
+
+resource "local_file" "public_key" {
+  content         = tls_private_key.key_pair.public_key_openssh
+  filename        = "pod${var.pod_number}-mcd-public-key"
   file_permission = 0700
 }
 
