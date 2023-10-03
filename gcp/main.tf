@@ -26,8 +26,8 @@ resource "google_project_service" "service" {
 ##################################################################################################################################
 
 resource "google_service_account" "sa" {
-  account_id   = "mcd-service-account"
-  display_name = "mcd-service-account"
+  account_id   = "pod${var.pod_number}-mcd-service-account"
+  display_name = "pod${var.pod_number}-mcd-service-account"
 }
 
 #############################################
@@ -119,6 +119,7 @@ resource "google_compute_instance" "application" {
     email  = google_service_account.sa.email
     scopes = ["cloud-platform"]
   }
+   tags = ["pod${var.pod_number}-app${count.index + 1}"]
 }
 
 resource "null_resource" "name" {
