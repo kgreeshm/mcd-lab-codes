@@ -141,6 +141,9 @@ resource "azurerm_linux_virtual_machine" "app" {
       host        = azurerm_public_ip.app-ip["${count.index}"].ip_address
     }
   }
+  tags = {
+    Name = "pod${var.pod_number}-app${count.index + 1}"
+  }
 }
 
 ################################################################################################################################
