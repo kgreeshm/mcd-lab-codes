@@ -68,6 +68,13 @@ resource "local_file" "public_key" {
   file_permission = 0700
 }
 
+resource "azurerm_ssh_public_key" "rg1-keypair" {
+  name                = "pod${var.pod_number}-ssh-keypair"
+  resource_group_name = azurerm_resource_group.app-rg[0].name
+  location            = var.location
+  public_key          = tls_private_key.key_pair.public_key_openssh
+}
+
 ################################################################################################################################
 # Virtual Machines
 ################################################################################################################################
